@@ -6,6 +6,7 @@
 !/sort_files.py
 !/requirements.txt
 !/README.md
+!/penguin.png
 
 # 위 목록에 실수로 추가하더라도 절대 올리지 않을 것
 .env

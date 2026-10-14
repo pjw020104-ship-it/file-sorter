@@ -7,14 +7,45 @@
     streamlit run app.py
 """
 
+import base64
 import io
 import zipfile
 from collections import Counter
-from pathlib import PurePath
+from pathlib import Path, PurePath
 
 import streamlit as st
 
 from sort_files import CATEGORIES, OTHER, categorize
+
+PENGUIN = Path(__file__).resolve().parent / "penguin.png"
+SPLASH_HOLD_S = 1.2  # 펭귄을 또렷하게 보여주는 시간 (app_tk.py와 같게)
+SPLASH_FADE_S = 0.8  # 사라지는 데 걸리는 시간
+
+
+def show_splash() -> None:
+    # 화면 전체를 덮는 펭귄 시작 화면. CSS 애니메이션으로 잠시 보였다가 사라진다
+    image = base64.b64encode(PENGUIN.read_bytes()).decode()
+    total = SPLASH_HOLD_S + SPLASH_FADE_S
+    hold = SPLASH_HOLD_S / total * 100
+    st.html(f"""
+<style>
+  #penguin-splash {{
+    position: fixed; inset: 0; z-index: 1000000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: white; font-family: sans-serif;
+    animation: penguin-fade {total}s ease-in forwards;
+  }}
+  @keyframes penguin-fade {{
+    0%, {hold:.0f}% {{ opacity: 1; }}
+    100% {{ opacity: 0; visibility: hidden; }}
+  }}
+</style>
+<div id="penguin-splash">
+  <img src="data:image/png;base64,{image}" width="180" alt="펭귄">
+  <div style="color:#263248; font-size:28px; font-weight:bold; margin-top:8px">파일분류기</div>
+  <div style="color:gray; font-size:15px; margin-top:4px">잠시만 기다려 주세요...</div>
+</div>
+""")
 
 
 def unique_name(name: str, used: set[str]) -> str:
@@ -61,7 +92,10 @@ def count_table(counts: Counter) -> list[dict]:
     return rows
 
 
-st.set_page_config(page_title="파일 자동 분류", page_icon="📂")
+st.set_page_config(page_title="파일 자동 분류", page_icon=str(PENGUIN))
+if "splash_shown" not in st.session_state:  # 처음 접속했을 때 한 번만
+    st.session_state.splash_shown = True
+    show_splash()
 st.title("📂 파일 자동 분류")
 st.write(
     "파일을 올리면 종류별(문서 / 엑셀 / 이미지 / 압축 / 기타) 폴더로 나눠 "
